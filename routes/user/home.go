@@ -87,7 +87,14 @@ func retrieveFeeds(c *context.Context, ctxUser *models.User, userID int64, isPro
 	if len(feeds) > 0 {
 		afterID := feeds[len(feeds)-1].ID
 		c.Data["AfterID"] = afterID
-		c.Header().Set("X-AJAX-URL", fmt.Sprintf("%s?after_id=%d", c.Data["Link"], afterID))
+		link := fmt.Sprintf("%s?after_id=%d", c.Data["Link"], afterID)
+		if filterStart != "" {
+			link = fmt.Sprintf("%s&filter-start=%s", link, filterStart);
+		}
+		if filterStop != "" {
+			link = fmt.Sprintf("%s&filter-stop=%s", link, filterStop);
+		}
+		c.Header().Set("X-AJAX-URL", link)
 	}
 }
 
