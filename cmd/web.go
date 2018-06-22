@@ -178,6 +178,7 @@ func runWeb(c *cli.Context) error {
 	// Especially some AJAX requests, we can reduce middleware number to improve performance.
 	// Routers.
 	m.Get("/", ignSignIn, routes.Home)
+	m.Get("/my-commits", user.MyCommits)
 	m.Group("/explore", func() {
 		m.Get("", func(c *context.Context) {
 			c.Redirect(setting.AppSubURL + "/explore/repos")

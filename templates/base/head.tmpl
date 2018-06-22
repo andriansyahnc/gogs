@@ -38,7 +38,9 @@
 	<link rel="shortcut icon" href="{{AppSubURL}}/img/favicon.png" />
 
 	<script src="{{AppSubURL}}/js/jquery-1.11.3.min.js"></script>
+	<script src="{{AppSubURL}}/js/jquery-ui-1.11.3.min.js"></script>
 	<script src="{{AppSubURL}}/js/libs/jquery.are-you-sure.js"></script>
+	<script src="{{AppSubURL}}/js/override.js"></script>
 	<link rel="stylesheet" href="{{AppSubURL}}/assets/font-awesome-4.6.3/css/font-awesome.min.css">
 	<link rel="stylesheet" href="{{AppSubURL}}/assets/octicons-4.3.0/octicons.min.css">
 
@@ -61,6 +63,8 @@
 	<!-- Stylesheet -->
 	<link rel="stylesheet" href="{{AppSubURL}}/css/semantic-2.3.1.min.css">
 	<link rel="stylesheet" href="{{AppSubURL}}/css/gogs.css?v={{MD5 AppVer}}">
+	<link rel="stylesheet" href="{{AppSubURL}}/css/jquery-ui.min.css?v={{MD5 AppVer}}">
+	<link rel="stylesheet" href="{{AppSubURL}}/css/override.css?v={{MD5 AppVer}}">
 	<noscript>
 		<style>
 			.dropdown:hover > .menu { display: block; }
@@ -94,6 +98,7 @@
 
 								{{if .IsLogged}}
 									<a class="item{{if .PageIsDashboard}} active{{end}}" href="{{AppSubURL}}/">{{.i18n.Tr "dashboard"}}</a>
+									<a class="item{{if .PageIsMyCommits}} active{{end}}" href="{{AppSubURL}}/my-commits">{{.i18n.Tr "My Commits"}}</a>
 									<a class="item{{if .PageIsIssues}} active{{end}}" href="{{AppSubURL}}/issues">{{.i18n.Tr "issues"}}</a>
 									<a class="item{{if .PageIsPulls}} active{{end}}" href="{{AppSubURL}}/pulls">{{.i18n.Tr "pull_requests"}}</a>
 								{{else}}

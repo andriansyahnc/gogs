@@ -738,7 +738,7 @@ func MirrorSyncDeleteAction(repo *Repository, refName string) error {
 // GetFeeds returns action list of given user in given context.
 // actorID is the user who's requesting, ctxUserID is the user/org that is requested.
 // actorID can be -1 when isProfile is true or to skip the permission check.
-func GetFeeds(ctxUser *User, actorID, afterID int64, isProfile bool) ([]*Action, error) {
+func GetFeeds(ctxUser *User, actorID, afterID int64, isProfile bool, filterStart string, filterStop string) ([]*Action, error) {
 	actions := make([]*Action, 0, setting.UI.User.NewsFeedPagingNum)
 	sess := x.Limit(setting.UI.User.NewsFeedPagingNum).Where("user_id = ?", ctxUser.ID).Desc("id")
 	if afterID > 0 {
@@ -761,6 +761,27 @@ func GetFeeds(ctxUser *User, actorID, afterID int64, isProfile bool) ([]*Action,
 		if len(repoIDs) > 0 {
 			sess.In("repo_id", repoIDs)
 		}
+	}
+
+	layout := "01/02/2006 15:04:05"
+
+	if filterStart != "" {
+		filterStart = filterStart + " 00:00:00"
+		t, err := time.Parse(layout, filterStart)
+		if err != nil {
+			fmt.Println(err)
+		}
+		sess.And("created_unix > ?", t.Unix())
+	}
+
+	if filterStop != "" {
+		filterStop = filterStop + " 23:59:59"
+		t, err := time.Parse(layout, filterStop)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(t.Unix());
+		sess.And("created_unix < ?", t.Unix())
 	}
 
 	err := sess.Find(&actions)

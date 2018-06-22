@@ -1,0 +1,39 @@
+{{template "base/head" .}}
+<div class="dashboard feeds">
+	{{template "user/commit/navbar" .}}
+	<div class="ui container">
+		<div class="ui grid">
+			<div class="eleven wide column">
+				{{template "user/commit/feeds" .}}
+				{{if .AfterID}}
+					<button class="ui fluid basic button center ajax-load-button" data-url="{{.Link}}?after_id={{.AfterID}}">More</button>
+				{{end}}
+			</div>
+			<div class="five wide column">
+				<h4 class="ui top attached header">
+					Filter
+				</h4>
+				<div class="ui attached table segment">
+					<form>
+						<ul id="filter-list">
+							<li class="start">
+								<div>Start</div>
+								<div><input type="text" name="filter-start" class="datepicker date-filter-start" value="{{.FilterStart}}"></div>
+								<small>mm/dd/yyyy</small>
+							</li>
+							<li class="finish">
+								<div>Finish</div>
+								<div><input type="text" name="filter-stop" class="datepicker date-filter-stop" value="{{.FilterStop}}"></div>
+								<small>mm/dd/yyyy</small>
+							</li>
+							<li class="submit-button">
+								<button>Go</button>
+							</li>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{{template "base/footer" .}}

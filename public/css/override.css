@@ -1,0 +1,9 @@
+#filter-list {
+    margin: 0px;
+    list-style: none;
+    padding: 15px;
+}
+
+#filter-list input {
+    width: 100%;
+}

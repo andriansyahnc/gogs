@@ -7,6 +7,8 @@ package user
 import (
 	"bytes"
 	"fmt"
+	"net/http"
+	"time"
 
 	"github.com/Unknwon/com"
 	"github.com/Unknwon/paginater"
@@ -19,6 +21,7 @@ import (
 
 const (
 	DASHBOARD = "user/dashboard/dashboard"
+	COMMIT    = "user/commit/commit"
 	NEWS_FEED = "user/dashboard/feeds"
 	ISSUES    = "user/dashboard/issues"
 	PROFILE   = "user/profile"
@@ -52,8 +55,8 @@ func getDashboardContextUser(c *context.Context) *models.User {
 // retrieveFeeds loads feeds from database by given context user.
 // The user could be organization so it is not always the logged in user,
 // which is why we have to explicitly pass the context user ID.
-func retrieveFeeds(c *context.Context, ctxUser *models.User, userID int64, isProfile bool) {
-	actions, err := models.GetFeeds(ctxUser, userID, c.QueryInt64("after_id"), isProfile)
+func retrieveFeeds(c *context.Context, ctxUser *models.User, userID int64, isProfile bool, filterStart string, filterStop string) {
+	actions, err := models.GetFeeds(ctxUser, userID, c.QueryInt64("after_id"), isProfile, filterStart, filterStop)
 	if err != nil {
 		c.Handle(500, "GetFeeds", err)
 		return
@@ -94,7 +97,7 @@ func Dashboard(c *context.Context) {
 		return
 	}
 
-	retrieveFeeds(c, ctxUser, c.User.ID, false)
+	retrieveFeeds(c, ctxUser, c.User.ID, false, "", "")
 	if c.Written() {
 		return
 	}
@@ -162,6 +165,97 @@ func Dashboard(c *context.Context) {
 	c.Data["Mirrors"] = mirrors
 
 	c.HTML(200, DASHBOARD)
+}
+
+func MyCommits(c *context.Context, r *http.Request) {
+
+	layout := "01/02/2006"
+
+	fstart := ""
+	fstop := ""
+	
+	filter_start, fs_err := time.Parse(layout, r.URL.Query().Get("filter-start"))
+	filter_stop, fp_err := time.Parse(layout, r.URL.Query().Get("filter-stop"))
+
+	if fs_err != nil {
+		fstart = ""
+	} else {
+		fstart = filter_start.Format("01/02/2006")
+	}
+
+	if fp_err != nil {
+		fstop = ""
+	} else {
+		fstop = filter_stop.Format("01/02/2006")
+	}
+
+	c.Data["FilterStart"] = fstart
+	c.Data["FilterStop"] = fstop
+
+	ctxUser := getDashboardContextUser(c)
+	if c.Written() {
+		return
+	}
+
+	retrieveFeeds(c, ctxUser, c.User.ID, false, fstart, fstop)
+	if c.Written() {
+		return
+	}
+
+	if c.Req.Header.Get("X-AJAX") == "true" {
+		c.HTML(200, NEWS_FEED)
+		return
+	}
+
+	c.Data["Title"] = ctxUser.DisplayName() + " - " + c.Tr("dashboard")
+	c.Data["PageIsMyCommits"] = true
+	c.Data["PageIsNews"] = true
+
+	// Only user can have collaborative repositories.
+	if !ctxUser.IsOrganization() {
+		collaborateRepos, err := c.User.GetAccessibleRepositories(setting.UI.User.RepoPagingNum)
+		if err != nil {
+			c.Handle(500, "GetAccessibleRepositories", err)
+			return
+		} else if err = models.RepositoryList(collaborateRepos).LoadAttributes(); err != nil {
+			c.Handle(500, "RepositoryList.LoadAttributes", err)
+			return
+		}
+		c.Data["CollaborativeRepos"] = collaborateRepos
+	}
+
+	var err error
+	var repos, mirrors []*models.Repository
+	var repoCount int64
+	if ctxUser.IsOrganization() {
+		c.Handle(500, "GetUserRepositories", err)
+		return
+	} else {
+		if err = ctxUser.GetRepositories(1, setting.UI.User.RepoPagingNum); err != nil {
+			c.Handle(500, "GetRepositories", err)
+			return
+		}
+		repos = ctxUser.Repos
+		repoCount = int64(ctxUser.NumRepos)
+
+		mirrors, err = ctxUser.GetMirrorRepositories()
+		if err != nil {
+			c.Handle(500, "GetMirrorRepositories", err)
+			return
+		}
+	}
+	c.Data["Repos"] = repos
+	c.Data["RepoCount"] = repoCount
+	c.Data["MaxShowRepoNum"] = setting.UI.User.RepoPagingNum
+
+	if err := models.MirrorRepositoryList(mirrors).LoadAttributes(); err != nil {
+		c.Handle(500, "MirrorRepositoryList.LoadAttributes", err)
+		return
+	}
+	c.Data["MirrorCount"] = len(mirrors)
+	c.Data["Mirrors"] = mirrors
+
+	c.HTML(200, COMMIT)
 }
 
 func Issues(c *context.Context) {
